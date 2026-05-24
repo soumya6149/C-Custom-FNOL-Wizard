@@ -8,8 +8,7 @@
 
 ---
 
-A **production-style Guidewire ClaimCenter customization** implementing a complete
-4-step **First Notice of Loss (FNOL) intake wizard** using native ClaimCenter technologies:
+A Guidewire ClaimCenter customization implementing a complete 4-step **First Notice of Loss (FNOL) intake wizard** using native ClaimCenter technologies:
 
 - **PCF** (Page Configuration Framework) — Multi-step wizard UI screens
 - **Gosu** — Business logic helpers, validations, policy search, claim submission
@@ -160,10 +159,10 @@ Policy lookup and coverage verification.
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/soumya6149/CC-Custom-FNOL-Wizard.git
+git clone https://github.com/soumya6149/C-Custom-FNOL-Wizard.git
 
 # 2. Copy modules/ into your ClaimCenter project root
-cp -r CC-Custom-FNOL-Wizard/modules/ <your-cc-project>/
+cp -r C-Custom-FNOL-Wizard/modules/ <your-cc-project>/
 
 # 3. In Guidewire Studio:
 #    - Right-click project → Refresh
