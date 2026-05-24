@@ -1,0 +1,100 @@
+<?xml version="1.0"?>
+<!--
+  NewFNOLWizard_Review.pcf
+  ==========================
+  Step 4 (Final) of the Custom FNOL Wizard.
+  Displays a complete read-only summary of all entered FNOL data.
+  User can go back to edit any step or click Submit to finalize.
+
+  On Submit:
+  - Runs full validation across all steps
+  - Sets claim state to Open
+  - Auto-assigns adjuster group by LossType
+  - Creates FNOL acknowledgment activity
+  - Initializes reserves for all exposures
+
+  Author: Soumya | Senior Guidewire ClaimCenter Developer
+-->
+<PCF
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation="../../../../../../../pcf.xsd">
+
+  <WizardStepSet
+    id="NewFNOLWizard_Review"
+    title="DisplayKey.get(&quot;Web.FNOL.Review.Title&quot;)">
+
+    <Require name="claim" type="Claim"/>
+
+    <WizardButtons>
+      <WizardButton
+        id="SubmitFNOL"
+        label="DisplayKey.get(&quot;Web.FNOL.Review.Submit&quot;)"
+        action="submitFNOL()"
+        confirm="DisplayKey.get(&quot;Web.FNOL.Review.SubmitConfirm&quot;)"/>
+    </WizardButtons>
+
+    <Screen id="ReviewScreen">
+      <PanelSet>
+
+        <!-- Policy Summary -->
+        <DetailViewPanel id="PolicySummaryPanel">
+          <InputColumn>
+            <Label label="DisplayKey.get(&quot;Web.FNOL.Review.PolicySection&quot;)"/>
+            <Input label="DisplayKey.get(&quot;Web.FNOL.Review.PolicyNumber&quot;)"   value="claim.Policy.PolicyNumber"        editable="false"/>
+            <Input label="DisplayKey.get(&quot;Web.FNOL.Review.InsuredName&quot;)"    value="claim.InsuredName"                editable="false"/>
+            <Input label="DisplayKey.get(&quot;Web.FNOL.Review.PolicyType&quot;)"     value="claim.PolicyType.DisplayName"     editable="false"/>
+            <Input label="DisplayKey.get(&quot;Web.FNOL.Review.PolicyEffDate&quot;)"  value="claim.Policy.EffectiveDate"       editable="false"/>
+            <Input label="DisplayKey.get(&quot;Web.FNOL.Review.PolicyExpDate&quot;)"  value="claim.Policy.ExpirationDate"      editable="false"/>
+          </InputColumn>
+        </DetailViewPanel>
+
+        <!-- Loss Summary -->
+        <DetailViewPanel id="LossSummaryPanel">
+          <InputColumn>
+            <Label label="DisplayKey.get(&quot;Web.FNOL.Review.LossSection&quot;)"/>
+            <Input label="DisplayKey.get(&quot;Web.FNOL.Review.LossDate&quot;)"       value="claim.LossDate"                   editable="false"/>
+            <Input label="DisplayKey.get(&quot;Web.FNOL.Review.LossType&quot;)"       value="claim.LossType.DisplayName"       editable="false"/>
+            <Input label="DisplayKey.get(&quot;Web.FNOL.Review.LossCause&quot;)"      value="claim.LossCause.DisplayName"      editable="false"/>
+            <Input label="DisplayKey.get(&quot;Web.FNOL.Review.LossLocation&quot;)"   value="claim.LossLocation.DisplayName"   editable="false"/>
+            <Input label="DisplayKey.get(&quot;Web.FNOL.Review.Description&quot;)"    value="claim.Description"                editable="false"/>
+            <Input label="DisplayKey.get(&quot;Web.FNOL.Review.CatastropheFlag&quot;)" value="claim.CatastropheFlag"           editable="false"
+                   visible="claim.CatastropheFlag"/>
+          </InputColumn>
+        </DetailViewPanel>
+
+        <!-- Reporter Summary -->
+        <DetailViewPanel id="ReporterSummaryPanel">
+          <InputColumn>
+            <Label label="DisplayKey.get(&quot;Web.FNOL.Review.ReporterSection&quot;)"/>
+            <Input label="DisplayKey.get(&quot;Web.FNOL.Review.ReporterName&quot;)"   value="claim.Reporter.DisplayName"       editable="false"/>
+            <Input label="DisplayKey.get(&quot;Web.FNOL.Review.ReporterType&quot;)"   value="claim.ReporterType.DisplayName"   editable="false"/>
+            <Input label="DisplayKey.get(&quot;Web.FNOL.Review.ReporterPhone&quot;)"  value="claim.Reporter.PrimaryPhone"      editable="false"/>
+            <Input label="DisplayKey.get(&quot;Web.FNOL.Review.ReporterEmail&quot;)"  value="claim.Reporter.EmailAddress1"     editable="false"
+                   visible="claim.Reporter.EmailAddress1 != null"/>
+            <Input label="DisplayKey.get(&quot;Web.FNOL.Review.InjuryIndicator&quot;)"
+                   value="claim.InjuryDescription != null ? DisplayKey.get(&quot;Web.FNOL.Common.Yes&quot;) : DisplayKey.get(&quot;Web.FNOL.Common.No&quot;)"
+                   editable="false"
+                   visible="claim.LossType == typekey.LossType.TC_AUTOBODILY or claim.LossType == typekey.LossType.TC_WC"/>
+          </InputColumn>
+        </DetailViewPanel>
+
+      </PanelSet>
+    </Screen>
+
+    <Code><![CDATA[
+      uses gw.fnol.FNOLWizardHelper
+      uses gw.fnol.FNOLValidationHelper
+
+      function submitFNOL() {
+        // Run full validation before committing
+        var errors = FNOLValidationHelper.validateAll(claim)
+        if (not errors.isEmpty()) {
+          throw new gw.api.util.DisplayableException(errors.join(" | "))
+        }
+        FNOLWizardHelper.submitFNOL(claim)
+        ClaimDetailPage.go(claim)
+      }
+    ]]></Code>
+
+  </WizardStepSet>
+</PCF>

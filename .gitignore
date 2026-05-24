@@ -1,0 +1,58 @@
+# Guidewire ClaimCenter — .gitignore
+# =====================================
+
+# Guidewire Studio build artifacts
+*.class
+*.jar
+*.war
+*.ear
+bin/
+build/
+out/
+target/
+*.log
+
+# Guidewire Studio project files (IDE-specific, not source)
+.studio/
+.settings/
+.classpath
+.project
+*.launch
+
+# Gosu compiled output
+gsrc-out/
+gw-out/
+
+# ClaimCenter runtime / deployment artifacts
+deployed/
+logs/
+temp/
+work/
+*.pid
+
+# Environment-specific config (never commit credentials)
+modules/configuration/config/server.properties
+modules/configuration/config/database.properties
+*-credentials.xml
+*-passwords.xml
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IntelliJ / VS Code
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# Node (if any frontend tooling added later)
+node_modules/
+dist/
+
+# Python (if any scripts added)
+__pycache__/
+*.pyc
+.env

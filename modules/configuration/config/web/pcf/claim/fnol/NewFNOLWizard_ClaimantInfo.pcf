@@ -1,0 +1,124 @@
+<?xml version="1.0"?>
+<!--
+  NewFNOLWizard_ClaimantInfo.pcf
+  ================================
+  Step 3 of the Custom FNOL Wizard.
+  Captures reporter details and injury information.
+
+  Business Rules Enforced:
+  - Reporter first name, last name, and primary phone are mandatory
+  - Injury description panel is conditionally shown for bodily injury LossTypes
+  - ReporterType (relation to insured) is mandatory
+
+  Author: Soumya | Senior Guidewire ClaimCenter Developer
+-->
+<PCF
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation="../../../../../../../pcf.xsd">
+
+  <WizardStepSet
+    id="NewFNOLWizard_ClaimantInfo"
+    title="DisplayKey.get(&quot;Web.FNOL.ClaimantInfo.Title&quot;)">
+
+    <Require name="claim" type="Claim"/>
+
+    <WizardButtons/>
+
+    <Screen id="ClaimantInfoScreen">
+      <PanelSet>
+
+        <!-- Reporter Information -->
+        <InputSet
+          id="ReporterSection"
+          label="DisplayKey.get(&quot;Web.FNOL.ClaimantInfo.ReporterSection&quot;)">
+          <Input
+            id="ReporterFirstName"
+            label="DisplayKey.get(&quot;Web.FNOL.ClaimantInfo.FirstName&quot;)"
+            value="claim.Reporter.FirstName"
+            required="true"
+            boldLabel="true"/>
+          <Input
+            id="ReporterLastName"
+            label="DisplayKey.get(&quot;Web.FNOL.ClaimantInfo.LastName&quot;)"
+            value="claim.Reporter.LastName"
+            required="true"
+            boldLabel="true"/>
+          <RangeInput
+            id="ReporterType"
+            label="DisplayKey.get(&quot;Web.FNOL.ClaimantInfo.ReporterType&quot;)"
+            value="claim.ReporterType"
+            valueRange="typekey.ReporterType.getTypeKeys(false)"
+            required="true"
+            boldLabel="true"/>
+          <Input
+            id="PrimaryPhone"
+            label="DisplayKey.get(&quot;Web.FNOL.ClaimantInfo.PrimaryPhone&quot;)"
+            value="claim.Reporter.PrimaryPhone"
+            required="true"
+            boldLabel="true"/>
+          <Input
+            id="EmailAddress"
+            label="DisplayKey.get(&quot;Web.FNOL.ClaimantInfo.Email&quot;)"
+            value="claim.Reporter.EmailAddress1"/>
+          <BooleanRadioInput
+            id="RepresentedFlag"
+            label="DisplayKey.get(&quot;Web.FNOL.ClaimantInfo.Represented&quot;)"
+            value="claim.RepresentedFlag"
+            trueLabel="DisplayKey.get(&quot;Web.FNOL.Common.Yes&quot;)"
+            falseLabel="DisplayKey.get(&quot;Web.FNOL.Common.No&quot;)"/>
+        </InputSet>
+
+        <!-- Injury Details (conditional on LossType) -->
+        <InputSet
+          id="InjurySection"
+          label="DisplayKey.get(&quot;Web.FNOL.ClaimantInfo.InjurySection&quot;)"
+          visible="claim.LossType == typekey.LossType.TC_AUTOBODILY
+                   or claim.LossType == typekey.LossType.TC_ALLOTHER
+                   or claim.LossType == typekey.LossType.TC_WC">
+          <BooleanRadioInput
+            id="InjuryIndicator"
+            label="DisplayKey.get(&quot;Web.FNOL.ClaimantInfo.InjuryIndicator&quot;)"
+            value="injuryReported"
+            trueLabel="DisplayKey.get(&quot;Web.FNOL.Common.Yes&quot;)"
+            falseLabel="DisplayKey.get(&quot;Web.FNOL.Common.No&quot;)"/>
+          <TextAreaInput
+            id="InjuryDescription"
+            label="DisplayKey.get(&quot;Web.FNOL.ClaimantInfo.InjuryDescription&quot;)"
+            value="claim.InjuryDescription"
+            numRows="3"
+            visible="injuryReported"/>
+          <RangeInput
+            id="InjurySeverity"
+            label="DisplayKey.get(&quot;Web.FNOL.ClaimantInfo.InjurySeverity&quot;)"
+            value="claim.InjurySeverity"
+            valueRange="typekey.InjurySeverity.getTypeKeys(false)"
+            visible="injuryReported"/>
+          <Input
+            id="HospitalName"
+            label="DisplayKey.get(&quot;Web.FNOL.ClaimantInfo.HospitalName&quot;)"
+            value="claim.HospitalName"
+            visible="injuryReported"/>
+        </InputSet>
+
+      </PanelSet>
+    </Screen>
+
+    <Code><![CDATA[
+      uses gw.fnol.FNOLValidationHelper
+
+      property get injuryReported() : boolean {
+        return claim.InjuryDescription != null and not claim.InjuryDescription.isEmpty()
+      }
+      property set injuryReported(value : boolean) {
+        if (not value) {
+          claim.InjuryDescription = null
+        }
+      }
+
+      function validateStep() : String {
+        return FNOLValidationHelper.validateClaimantInfo(claim)
+      }
+    ]]></Code>
+
+  </WizardStepSet>
+</PCF>

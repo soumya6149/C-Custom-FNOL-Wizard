@@ -1,0 +1,129 @@
+<?xml version="1.0"?>
+<!--
+  NewFNOLWizard_LossDetails.pcf
+  ===============================
+  Step 2 of the Custom FNOL Wizard.
+  Captures the full details of the loss event: type, cause, location, and description.
+
+  Business Rules Enforced:
+  - LossType and LossCause are mandatory
+  - Description must be at least 20 characters
+  - Loss location is mandatory
+  - Weather-related cause auto-checks catastrophe flag
+
+  Author: Soumya | Senior Guidewire ClaimCenter Developer
+-->
+<PCF
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation="../../../../../../../pcf.xsd">
+
+  <WizardStepSet
+    id="NewFNOLWizard_LossDetails"
+    title="DisplayKey.get(&quot;Web.FNOL.LossDetails.Title&quot;)">
+
+    <Require name="claim" type="Claim"/>
+
+    <WizardButtons/>
+
+    <Screen id="LossDetailsScreen">
+      <PanelSet>
+
+        <!-- Primary Loss Information -->
+        <InputSet id="LossInfoInputs">
+          <RangeInput
+            id="LossType"
+            label="DisplayKey.get(&quot;Web.FNOL.LossDetails.LossType&quot;)"
+            value="claim.LossType"
+            valueRange="typekey.LossType.getTypeKeys(false)"
+            required="true"
+            boldLabel="true"
+            action="onLossTypeChange()"/>
+
+          <RangeInput
+            id="LossCause"
+            label="DisplayKey.get(&quot;Web.FNOL.LossDetails.LossCause&quot;)"
+            value="claim.LossCause"
+            valueRange="typekey.LossCause.getTypeKeys(false)"
+            required="true"
+            boldLabel="true"/>
+
+          <TextAreaInput
+            id="Description"
+            label="DisplayKey.get(&quot;Web.FNOL.LossDetails.Description&quot;)"
+            value="claim.Description"
+            numRows="5"
+            required="true"
+            boldLabel="true"/>
+
+          <Input
+            id="LossLocation"
+            label="DisplayKey.get(&quot;Web.FNOL.LossDetails.LossLocation&quot;)"
+            value="claim.LossLocation.DisplayName"
+            required="true"
+            boldLabel="true"/>
+
+          <Input
+            id="ReportedDate"
+            label="DisplayKey.get(&quot;Web.FNOL.LossDetails.ReportedDate&quot;)"
+            value="claim.ReportedDate"
+            inputType="DATE"
+            editable="false"/>
+        </InputSet>
+
+        <!-- CAT Flag — auto-set for weather-related causes -->
+        <InputSet
+          id="CatastropheInputs"
+          visible="isCatastropheEligible()">
+          <BooleanRadioInput
+            id="CatastropheFlag"
+            label="DisplayKey.get(&quot;Web.FNOL.LossDetails.CatastropheFlag&quot;)"
+            value="claim.CatastropheFlag"
+            trueLabel="DisplayKey.get(&quot;Web.FNOL.Common.Yes&quot;)"
+            falseLabel="DisplayKey.get(&quot;Web.FNOL.Common.No&quot;)"/>
+          <Input
+            id="CatastropheNumber"
+            label="DisplayKey.get(&quot;Web.FNOL.LossDetails.CatastropheNumber&quot;)"
+            value="claim.Catastrophe.CatastropheNumber"
+            visible="claim.CatastropheFlag"/>
+        </InputSet>
+
+        <!-- Weather Details (shown for weather-related LossCause) -->
+        <InputSet
+          id="WeatherInputs"
+          visible="claim.LossCause == typekey.LossCause.TC_WIND
+                   or claim.LossCause == typekey.LossCause.TC_FLOOD
+                   or claim.LossCause == typekey.LossCause.TC_HAIL">
+          <RangeInput
+            id="WeatherType"
+            label="DisplayKey.get(&quot;Web.FNOL.LossDetails.WeatherType&quot;)"
+            value="claim.WeatherType"
+            valueRange="typekey.WeatherType.getTypeKeys(false)"/>
+        </InputSet>
+
+      </PanelSet>
+    </Screen>
+
+    <Code><![CDATA[
+      uses gw.fnol.FNOLValidationHelper
+
+      function onLossTypeChange() {
+        // Auto-set catastrophe flag for weather-related loss causes
+        if (isCatastropheEligible()) {
+          claim.CatastropheFlag = true
+        }
+      }
+
+      function isCatastropheEligible() : boolean {
+        return claim.LossCause == typekey.LossCause.TC_WIND
+            or claim.LossCause == typekey.LossCause.TC_FLOOD
+            or claim.LossCause == typekey.LossCause.TC_HAIL
+            or claim.LossCause == typekey.LossCause.TC_EARTHQUAKE
+      }
+
+      function validateStep() : String {
+        return FNOLValidationHelper.validateLossDetails(claim)
+      }
+    ]]></Code>
+
+  </WizardStepSet>
+</PCF>

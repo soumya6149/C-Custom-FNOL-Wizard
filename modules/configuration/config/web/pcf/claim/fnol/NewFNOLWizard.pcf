@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<!--
+  NewFNOLWizard.pcf
+  ==================
+  Entry-point PCF for the Custom FNOL Wizard.
+  Defines the 4-step wizard navigation binding for ClaimCenter.
+
+  Compatible: Guidewire ClaimCenter 9.x / 10.x / Cloud (Jasmine+)
+  Author    : Soumya | Senior Guidewire ClaimCenter Developer
+-->
+<PCF
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation="../../../../../../../pcf.xsd">
+
+  <WizardPageBinding
+    id="NewFNOLWizard"
+    title="DisplayKey.get(&quot;Web.FNOL.Wizard.Title&quot;)"
+    parent="ClaimDetailPage(claim)"
+    wizard="true">
+
+    <Require name="claim" type="Claim"/>
+
+    <!-- Step 1: Search and verify policy -->
+    <WizardStep
+      id="PolicySearch"
+      label="DisplayKey.get(&quot;Web.FNOL.Step.PolicySearch&quot;)"
+      page="NewFNOLWizard_PolicySearch(claim)"/>
+
+    <!-- Step 2: Capture loss event details -->
+    <WizardStep
+      id="LossDetails"
+      label="DisplayKey.get(&quot;Web.FNOL.Step.LossDetails&quot;)"
+      page="NewFNOLWizard_LossDetails(claim)"/>
+
+    <!-- Step 3: Reporter and claimant information -->
+    <WizardStep
+      id="ClaimantInfo"
+      label="DisplayKey.get(&quot;Web.FNOL.Step.ClaimantInfo&quot;)"
+      page="NewFNOLWizard_ClaimantInfo(claim)"/>
+
+    <!-- Step 4: Final review and submission -->
+    <WizardStep
+      id="Review"
+      label="DisplayKey.get(&quot;Web.FNOL.Step.Review&quot;)"
+      page="NewFNOLWizard_Review(claim)"/>
+
+  </WizardPageBinding>
+</PCF>

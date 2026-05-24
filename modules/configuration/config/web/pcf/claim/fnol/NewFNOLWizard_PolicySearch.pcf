@@ -1,0 +1,102 @@
+<?xml version="1.0"?>
+<!--
+  NewFNOLWizard_PolicySearch.pcf
+  ================================
+  Step 1 of the Custom FNOL Wizard.
+  Allows the user to search for a policy by policy number and validate
+  that the policy was active on the reported date of loss.
+
+  Business Rules Enforced:
+  - Policy number is mandatory
+  - Loss date is mandatory and cannot be in the future
+  - Loss date must fall within policy effective/expiration dates
+  - Policy must exist in ClaimCenter
+
+  Author: Soumya | Senior Guidewire ClaimCenter Developer
+-->
+<PCF
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation="../../../../../../../pcf.xsd">
+
+  <WizardStepSet
+    id="NewFNOLWizard_PolicySearch"
+    title="DisplayKey.get(&quot;Web.FNOL.PolicySearch.Title&quot;)">
+
+    <Require name="claim" type="Claim"/>
+
+    <WizardButtons>
+      <WizardButton
+        id="SearchPolicy"
+        label="DisplayKey.get(&quot;Web.FNOL.PolicySearch.SearchBtn&quot;)"
+        action="searchAndBindPolicy()"/>
+    </WizardButtons>
+
+    <Screen id="PolicySearchScreen">
+      <PanelSet>
+        <InputSet id="PolicyLookupInputs">
+          <Label
+            label="DisplayKey.get(&quot;Web.FNOL.PolicySearch.Instructions&quot;)"
+            id="Instructions"/>
+
+          <Input
+            id="PolicyNumber"
+            label="DisplayKey.get(&quot;Web.FNOL.PolicySearch.PolicyNumber&quot;)"
+            value="claim.Policy.PolicyNumber"
+            required="true"
+            boldLabel="true"/>
+
+          <Input
+            id="LossDate"
+            label="DisplayKey.get(&quot;Web.FNOL.PolicySearch.LossDate&quot;)"
+            value="claim.LossDate"
+            inputType="DATE"
+            required="true"
+            boldLabel="true"/>
+
+          <!-- Auto-populated after policy search -->
+          <Input
+            id="InsuredName"
+            label="DisplayKey.get(&quot;Web.FNOL.PolicySearch.InsuredName&quot;)"
+            value="claim.InsuredName"
+            editable="false"
+            visible="claim.Policy != null and not claim.Policy.PolicyNumber.isEmpty()"/>
+
+          <Input
+            id="PolicyType"
+            label="DisplayKey.get(&quot;Web.FNOL.PolicySearch.PolicyType&quot;)"
+            value="claim.PolicyType.DisplayName"
+            editable="false"
+            visible="claim.Policy != null and not claim.Policy.PolicyNumber.isEmpty()"/>
+
+          <Input
+            id="PolicyEffDate"
+            label="DisplayKey.get(&quot;Web.FNOL.PolicySearch.EffectiveDate&quot;)"
+            value="claim.Policy.EffectiveDate"
+            editable="false"
+            visible="claim.Policy != null"/>
+
+          <Input
+            id="PolicyExpDate"
+            label="DisplayKey.get(&quot;Web.FNOL.PolicySearch.ExpirationDate&quot;)"
+            value="claim.Policy.ExpirationDate"
+            editable="false"
+            visible="claim.Policy != null"/>
+        </InputSet>
+      </PanelSet>
+    </Screen>
+
+    <Code><![CDATA[
+      uses gw.fnol.FNOLPolicySearchHelper
+      uses gw.fnol.FNOLValidationHelper
+
+      function searchAndBindPolicy() {
+        var validationMsg = FNOLValidationHelper.validatePolicySearch(claim)
+        if (validationMsg != null) {
+          throw new gw.api.util.DisplayableException(validationMsg)
+        }
+        FNOLPolicySearchHelper.findPolicyByNumber(claim.Policy.PolicyNumber, claim.LossDate, claim)
+      }
+    ]]></Code>
+
+  </WizardStepSet>
+</PCF>

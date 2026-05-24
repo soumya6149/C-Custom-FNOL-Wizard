@@ -1,0 +1,174 @@
+<?xml version="1.0"?>
+<!--
+  FNOLValidationRules.grs
+  ========================
+  ClaimCenter Validation Rule Set applied during FNOL submission.
+
+  Rules are evaluated by the ClaimCenter Rules Engine on claim save/submit.
+  Each rule defines a Condition (Gosu expression) and returns a localized
+  message on failure.
+
+  Rule Severities:
+    Error   — Blocks submission
+    Warning — Allows submission with a user-acknowledged warning
+
+  Compatible: Guidewire ClaimCenter 9.x / 10.x / Cloud
+  Author    : Soumya | Senior Guidewire ClaimCenter Developer
+-->
+<RuleSet
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation="../../../../../../ruleset.xsd"
+  name="FNOLValidationRules"
+  type="Validation"
+  entitytype="Claim">
+
+  <Description>Custom FNOL validation rules for ClaimCenter. Enforces business
+  constraints across policy search, loss details, and reporter information
+  before a new FNOL claim can be submitted.</Description>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       RULE 1: Loss Date — Cannot be in the future
+       ═══════════════════════════════════════════════════════════════ -->
+  <Rule
+    id="LossDateNotFuture"
+    name="Loss Date Must Not Be In The Future"
+    conditionType="Condition"
+    severity="Error"
+    active="true">
+    <Description>
+      Blocks FNOL submission if the recorded loss date is after today's date.
+      Future loss dates are invalid in ClaimCenter.
+    </Description>
+    <Condition><![CDATA[
+      claim.LossDate != null
+      and claim.LossDate > gw.api.util.DateUtil.currentDate()
+    ]]></Condition>
+    <Message><![CDATA[
+      DisplayKey.get("Web.FNOL.Validation.LossDateFuture")
+    ]]></Message>
+  </Rule>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       RULE 2: Loss Date — Must fall within policy effective period
+       ═══════════════════════════════════════════════════════════════ -->
+  <Rule
+    id="LossDateWithinPolicyPeriod"
+    name="Loss Date Must Be Within Policy Effective Period"
+    conditionType="Condition"
+    severity="Error"
+    active="true">
+    <Description>
+      Ensures the loss date falls between the policy effective and expiration dates.
+      Claims outside the policy period should be declined or referred.
+    </Description>
+    <Condition><![CDATA[
+      claim.Policy != null
+      and claim.LossDate != null
+      and (
+        (claim.Policy.EffectiveDate  != null and claim.LossDate < claim.Policy.EffectiveDate)
+        or
+        (claim.Policy.ExpirationDate != null and claim.LossDate > claim.Policy.ExpirationDate)
+      )
+    ]]></Condition>
+    <Message><![CDATA[
+      DisplayKey.get("Web.FNOL.Validation.LossDateOutsidePolicy",
+        claim.Policy.EffectiveDate, claim.Policy.ExpirationDate)
+    ]]></Message>
+  </Rule>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       RULE 3: Claim Description — Minimum 20 characters
+       ═══════════════════════════════════════════════════════════════ -->
+  <Rule
+    id="DescriptionMinLength"
+    name="Claim Description Must Be At Least 20 Characters"
+    conditionType="Condition"
+    severity="Error"
+    active="true">
+    <Description>
+      A meaningful description of the loss event is required.
+      Generic one-word entries are not accepted.
+    </Description>
+    <Condition><![CDATA[
+      claim.Description == null
+      or claim.Description.trim().length() < 20
+    ]]></Condition>
+    <Message><![CDATA[
+      DisplayKey.get("Web.FNOL.Validation.DescriptionTooShort")
+    ]]></Message>
+  </Rule>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       RULE 4: Reporter — Name and phone are mandatory
+       ═══════════════════════════════════════════════════════════════ -->
+  <Rule
+    id="ReporterContactRequired"
+    name="Reporter Name and Phone Are Mandatory"
+    conditionType="Condition"
+    severity="Error"
+    active="true">
+    <Description>
+      A valid reporter with first name, last name, and primary phone is required
+      before FNOL can be submitted.
+    </Description>
+    <Condition><![CDATA[
+      claim.Reporter == null
+      or (claim.Reporter.FirstName == null or claim.Reporter.FirstName.trim().isEmpty())
+      or (claim.Reporter.LastName  == null or claim.Reporter.LastName.trim().isEmpty())
+      or (claim.Reporter.PrimaryPhone == null or claim.Reporter.PrimaryPhone.trim().isEmpty())
+    ]]></Condition>
+    <Message><![CDATA[
+      DisplayKey.get("Web.FNOL.Validation.ReporterContactRequired")
+    ]]></Message>
+  </Rule>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       RULE 5: Injury Description — Warning for bodily injury claims
+       ═══════════════════════════════════════════════════════════════ -->
+  <Rule
+    id="InjuryDescriptionRecommended"
+    name="Injury Description Recommended for Bodily Injury Claims"
+    conditionType="Condition"
+    severity="Warning"
+    active="true">
+    <Description>
+      When the loss type indicates bodily injury, it is strongly recommended
+      to capture an injury description for investigation purposes.
+    </Description>
+    <Condition><![CDATA[
+      (claim.LossType == typekey.LossType.TC_AUTOBODILY
+       or claim.LossType == typekey.LossType.TC_WC
+       or claim.LossType == typekey.LossType.TC_ALLOTHER)
+      and (claim.InjuryDescription == null or claim.InjuryDescription.trim().isEmpty())
+    ]]></Condition>
+    <Message><![CDATA[
+      DisplayKey.get("Web.FNOL.Validation.InjuryDescriptionRecommended")
+    ]]></Message>
+  </Rule>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       RULE 6: Catastrophe Flag — High-reserve claims flagged
+       ═══════════════════════════════════════════════════════════════ -->
+  <Rule
+    id="CatastropheFlagCheck"
+    name="Flag Catastrophe-Eligible Claims"
+    conditionType="Condition"
+    severity="Warning"
+    active="true">
+    <Description>
+      Claims with weather-related loss causes (wind, flood, hail, earthquake)
+      should be reviewed for catastrophe designation.
+    </Description>
+    <Condition><![CDATA[
+      (claim.LossCause == typekey.LossCause.TC_WIND
+       or claim.LossCause == typekey.LossCause.TC_FLOOD
+       or claim.LossCause == typekey.LossCause.TC_HAIL
+       or claim.LossCause == typekey.LossCause.TC_EARTHQUAKE)
+      and not claim.CatastropheFlag
+    ]]></Condition>
+    <Message><![CDATA[
+      DisplayKey.get("Web.FNOL.Validation.CatastropheFlagRecommended")
+    ]]></Message>
+  </Rule>
+
+</RuleSet>
